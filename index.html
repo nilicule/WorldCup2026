@@ -253,6 +253,13 @@
   .thirds .q{color:var(--accent);font-weight:700}
   .thirds .x{color:var(--muted)}
 
+  .legend{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px}
+  .legend h3{margin:0 0 8px;font-size:14px}
+  .legend dl{margin:0;display:flex;flex-wrap:wrap;gap:5px 22px}
+  .legend div{display:flex;gap:6px;align-items:baseline;font-size:12.5px}
+  .legend dt{font-weight:800;color:var(--ink)}
+  .legend dd{margin:0;color:var(--muted)}
+
   /* ---------- Knockout ---------- */
   .bracket-wrap{overflow-x:auto;padding-bottom:14px}
   .bracket{display:flex;gap:26px;min-width:980px;align-items:stretch}
@@ -885,6 +892,19 @@ function renderGroups(){
     });
   }
   html+=`</div>`;
+
+  // Column legend
+  html+=`<div class="legend"><h3>What the columns mean</h3><dl>
+    <div><dt>P</dt><dd>Played</dd></div>
+    <div><dt>W</dt><dd>Won</dd></div>
+    <div><dt>D</dt><dd>Drawn</dd></div>
+    <div><dt>L</dt><dd>Lost</dd></div>
+    <div><dt>GF</dt><dd>Goals for</dd></div>
+    <div><dt>GA</dt><dd>Goals against</dd></div>
+    <div><dt>GD</dt><dd>Goal difference</dd></div>
+    <div><dt>Pts</dt><dd>Points (3 win / 1 draw)</dd></div>
+  </dl></div>`;
+
   el("#view-groups").innerHTML=html;
 }
 
