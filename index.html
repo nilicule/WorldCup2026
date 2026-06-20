@@ -298,7 +298,17 @@
   .empty{color:var(--muted);text-align:center;padding:40px 0}
   footer{max-width:1180px;margin:0 auto 40px;padding:0 20px;color:var(--muted);font-size:12px}
   a{color:var(--accent)}
+  #toTop{position:fixed;right:18px;bottom:18px;z-index:50;width:44px;height:44px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    border-radius:50%;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--accent);box-shadow:0 4px 14px rgba(0,0,0,.4);
+    opacity:0;visibility:hidden;transform:translateY(8px);
+    transition:opacity .2s ease,transform .2s ease,visibility .2s ease}
+  #toTop.show{opacity:1;visibility:visible;transform:translateY(0)}
+  #toTop:hover{border-color:var(--accent);background:var(--panel)}
+  #toTop svg{width:20px;height:20px}
   @media(max-width:560px){
+    #toTop{right:14px;bottom:14px}
     .match{grid-template-columns:64px 1fr;grid-template-areas:"time meta" "score score";row-gap:8px}
     .m-time{grid-area:time}.m-meta{grid-area:meta}
     .score-entry{grid-area:score;justify-content:flex-start}
@@ -357,6 +367,13 @@
   matching the eight best third-placed teams to their eligible group slots. Schedule data: official
   FIFA / Wikipedia fixtures.
 </footer>
+
+<button id="toTop" type="button" aria-label="Back to top" title="Back to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</button>
 
 <script>
 "use strict";
@@ -1148,6 +1165,16 @@ window.addEventListener("load",()=>{
   const node=document.querySelector(`.daygroup[data-day="${TODAY}"]`);
   if(node) node.scrollIntoView({block:"start"});
 });
+
+// Back-to-top button: show after scrolling, smooth scroll to top
+(function(){
+  const btn=el("#toTop");
+  if(!btn) return;
+  const toggle=()=>btn.classList.toggle("show", window.scrollY>400);
+  window.addEventListener("scroll",toggle,{passive:true});
+  btn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
+  toggle();
+})();
 </script>
 </body>
 </html>
