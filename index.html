@@ -276,6 +276,10 @@
   .ko .krow{display:flex;align-items:center;gap:8px;padding:3px 0}
   .ko .krow .nm{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ko .krow.tbd .nm{color:var(--muted);font-weight:500;font-style:italic}
+  .ko .krow.proj .nm{color:var(--muted);font-style:italic;opacity:.8}
+  .projtag{display:inline-block;margin-left:5px;font-size:9px;font-weight:700;
+    font-style:normal;color:#2a2200;background:var(--accent-2);border-radius:4px;
+    padding:0 4px;vertical-align:middle;opacity:.85}
   .ko .krow.won .nm{color:var(--accent)}
   .ko .krow .flag{font-size:15px;width:20px;text-align:center}
   .ko .ksc{width:34px;height:30px;text-align:center;font-weight:700;background:var(--panel-2);
@@ -646,16 +650,16 @@ function breakTie(tied, matches){
 // Ranking of all 12 third-placed teams (only when ALL groups complete)
 function thirdPlaceTable(){
   const rows=[];
-  let allComplete=true;
+  let allComplete=true, anyPlayed=false;
   for(const L of Object.keys(GROUPS)){
     const s=standings(L);
     if(!s.complete){ allComplete=false; }
+    if(s.played>=1) anyPlayed=true;
     if(s.ranked[2]) rows.push({letter:L, stat:s.ranked[2], complete:s.complete});
   }
-  if(!allComplete) return {ready:false, rows:[]};
   rows.sort((x,y)=> y.stat.pts-x.stat.pts || y.stat.gd-x.stat.gd || y.stat.gf-x.stat.gf
         || x.stat.team.localeCompare(y.stat.team));
-  return {ready:true, rows};
+  return {ready:allComplete, anyPlayed, rows};
 }
 
 // Allocate 8 best third-placed teams to the 8 third-place slots (bipartite matching)
@@ -663,9 +667,9 @@ function thirdPlaceTable(){
 let _thirdAllocCache=null, _thirdAllocKey=null;
 function thirdAllocation(){
   const tp=thirdPlaceTable();
-  if(!tp.ready) return null;
+  if(!tp.ready && !tp.anyPlayed) return null; // nothing meaningful to project yet
   const qualified = tp.rows.slice(0,8).map(r=>r.letter); // 8 group letters
-  const key = qualified.join(",");
+  const key = (tp.ready?"F:":"P:")+qualified.join(",");
   if(_thirdAllocKey===key && _thirdAllocCache) return _thirdAllocCache;
   // Kuhn's algorithm: match each slot to a qualified letter within its allow-set
   const Q = new Set(qualified);
@@ -687,8 +691,9 @@ function thirdAllocation(){
   for(const ch of Object.keys(letterToSlot)){
     alloc[THIRD_SLOTS[letterToSlot[ch]].spec]=ch;
   }
-  _thirdAllocKey=key; _thirdAllocCache=alloc;
-  return alloc;
+  const out={alloc, provisional:!tp.ready};
+  _thirdAllocKey=key; _thirdAllocCache=out;
+  return out;
 }
 
 /* ============================================================
@@ -699,28 +704,30 @@ function resolveSpec(spec){
   // group position: 1A / 2B
   let m = /^([12])([A-L])$/.exec(spec);
   if(m){
-    const s=standings(m[2]);
-    if(s.complete){ const t=s.ranked[+m[1]-1]; if(t) return {team:t.team,label:t.team}; }
-    return {team:null,label:(m[1]==="1"?"Winner ":"Runner-up ")+m[2]};
+    const s=standings(m[2]); const t=s.ranked[+m[1]-1];
+    if(s.complete){ if(t) return {team:t.team,label:t.team,provisional:false}; }
+    else if(s.played>=1 && t){ return {team:t.team,label:t.team,provisional:true}; }
+    return {team:null,label:(m[1]==="1"?"Winner ":"Runner-up ")+m[2],provisional:false};
   }
   // third place slot
   if(/^3[A-L]{4,}$/.test(spec)){
-    const alloc=thirdAllocation();
-    if(alloc && alloc[spec]){
-      const L=alloc[spec]; const s=standings(L);
-      if(s.ranked[2]) return {team:s.ranked[2].team,label:s.ranked[2].team};
+    const a=thirdAllocation();
+    if(a && a.alloc[spec]){
+      const L=a.alloc[spec]; const s=standings(L);
+      if(s.ranked[2] && (s.complete || s.played>=1))
+        return {team:s.ranked[2].team,label:s.ranked[2].team,provisional:!s.complete};
     }
-    return {team:null,label:"3rd "+spec.slice(1).split("").join("/")};
+    return {team:null,label:"3rd "+spec.slice(1).split("").join("/"),provisional:false};
   }
   // winner / loser of match
   m=/^([WL])(\d+)$/.exec(spec);
   if(m){
     const res=koOutcome(+m[2]);
     const want = m[1]==="W" ? res.winner : res.loser;
-    if(want) return {team:want,label:want};
-    return {team:null,label:(m[1]==="W"?"Winner ":"Loser ")+"M"+m[2]};
+    if(want) return {team:want,label:want,provisional:false};
+    return {team:null,label:(m[1]==="W"?"Winner ":"Loser ")+"M"+m[2],provisional:false};
   }
-  return {team:null,label:spec};
+  return {team:null,label:spec,provisional:false};
 }
 
 // Outcome of a knockout match number: {home,away,winner,loser}
@@ -911,8 +918,10 @@ function renderGroups(){
 // ---- Knockout bracket ----
 function renderKnockout(){
   const order=["R32","R16","QF","SF","FINAL"];
-  let html=`<div class="hint">Slots fill automatically from the group tables. Enter scores below
-    (use the Pens buttons if a match is level). Winners advance through the bracket.</div>
+  let html=`<div class="hint">Slots fill automatically from the group tables. Teams tagged
+    <span class="projtag">PROJ</span> are live projections from the current standings and will
+    firm up as each group finishes — scores can only be entered once both teams are confirmed.
+    Winners advance through the bracket.</div>
     <div class="bracket-wrap"><div class="bracket">`;
   for(const round of order){
     const ms=KO_MATCHES.filter(m=>m.round===round);
@@ -935,24 +944,26 @@ function renderKnockout(){
 function koCard(m, standalone){
   const o=koOutcome(m.n);
   const r=getRes(m.id)||{};
-  const both=o.home&&o.away;
-  const dis=both?"":"disabled";
+  const homeRes=resolveSpec(m.homeSpec);
+  const awayRes=resolveSpec(m.awaySpec);
+  // Scores stay locked until BOTH teams are final (not provisional projections).
+  const bothFinal=o.home&&!homeRes.provisional && o.away&&!awayRes.provisional;
+  const dis=bothFinal?"":"disabled";
   const hv=r.h===undefined?"":r.h, av=r.a===undefined?"":r.a;
-  const homeLabel=resolveSpec(m.homeSpec);
-  const awayLabel=resolveSpec(m.awaySpec);
-  function row(team,label,side){
+  function row(team,res,side){
     const won=o.winner&&team&&o.winner===team;
-    const cls = team?(won?"won":""):"tbd";
-    const nm = team?`${flag(team)}`.padEnd?team:label:label;
+    const prov=team&&res.provisional;
+    let cls = team?(won?"won":""):"tbd";
+    if(prov) cls+=" proj";
     return `<div class="krow ${cls}">
       ${team?`<span class="flag">${flag(team)}</span>`:`<span class="flag">·</span>`}
-      <span class="nm">${esc(team||label)}</span>
+      <span class="nm">${esc(team||res.label)}${prov?'<span class="projtag">PROJ</span>':''}</span>
       <input class="ksc" type="number" min="0" max="99" inputmode="numeric"
         data-score="${m.id}" data-side="${side}" value="${side==='h'?hv:av}" ${dis} aria-label="score">
     </div>`;
   }
   let pen="";
-  if(both && hasScore(r) && r.h===r.a){
+  if(bothFinal && hasScore(r) && r.h===r.a){
     pen=`<div class="kpen"><span class="lbl">Pens:</span>
       <button data-pen="${m.id}" data-side="h" class="${r.pen==='h'?'sel':''}">${o.home? '🅷':'H'}</button>
       <button data-pen="${m.id}" data-side="a" class="${r.pen==='a'?'sel':''}">${o.away? '🅰':'A'}</button></div>`;
@@ -961,8 +972,8 @@ function koCard(m, standalone){
   return `<div class="ko${tdy}">
     <div class="kmeta"><span>M${m.n}${standalone?" · 3rd place":""}</span>
       <span>${fmtShort.format(dOf(m.utc))} · ${esc(m.city)}</span></div>
-    ${row(o.home,homeLabel.label,"h")}
-    ${row(o.away,awayLabel.label,"a")}
+    ${row(o.home,homeRes,"h")}
+    ${row(o.away,awayRes,"a")}
     ${pen}
   </div>`;
 }
