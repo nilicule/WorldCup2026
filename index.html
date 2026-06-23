@@ -280,6 +280,9 @@
   .projtag{display:inline-block;margin-left:5px;font-size:9px;font-weight:700;
     font-style:normal;color:#2a2200;background:var(--accent-2);border-radius:4px;
     padding:0 4px;vertical-align:middle;opacity:.85}
+  .qualtag{display:inline-block;margin-left:5px;font-size:9px;font-weight:700;
+    font-style:normal;color:#03241c;background:var(--accent);border-radius:4px;
+    padding:0 4px;vertical-align:middle}
   .ko .krow.won .nm{color:var(--accent)}
   .ko .krow .flag{font-size:15px;width:20px;text-align:center}
   .ko .ksc{width:34px;height:30px;text-align:center;font-weight:700;background:var(--panel-2);
@@ -664,6 +667,49 @@ function breakTie(tied, matches){
   });
 }
 
+// Teams mathematically guaranteed a top-2 (knockout) finish, even before the
+// group is finished. Enumerates every win/draw/loss combination of the remaining
+// matches; a team is "clinched" only if it stays top-2 in EVERY scenario. Points
+// ties are treated adversarially (a team level on points is counted as ahead), so
+// the guarantee holds regardless of goal-difference / head-to-head tiebreakers.
+const _clinchMemo={};
+function clinchedTeams(letter){
+  if(_clinchMemo[letter]) return _clinchMemo[letter];
+  const teams=GROUPS[letter];
+  const ms=groupMatches(letter);
+  const base={}; teams.forEach(t=>base[t]=0);
+  const remaining=[];
+  for(const m of ms){
+    const r=getRes(m.id);
+    if(hasScore(r)){
+      if(r.h>r.a) base[m.home]+=3;
+      else if(r.h<r.a) base[m.away]+=3;
+      else { base[m.home]++; base[m.away]++; }
+    } else remaining.push(m);
+  }
+  const safe={}; teams.forEach(t=>safe[t]=true);
+  const R=remaining.length, total=Math.pow(3,R);
+  for(let mask=0;mask<total;mask++){
+    const pts={}; teams.forEach(t=>pts[t]=base[t]);
+    let x=mask;
+    for(let k=0;k<R;k++){
+      const o=x%3; x=Math.floor(x/3); const m=remaining[k];
+      if(o===0) pts[m.home]+=3;
+      else if(o===1) pts[m.away]+=3;
+      else { pts[m.home]++; pts[m.away]++; }
+    }
+    for(const t of teams){
+      if(!safe[t]) continue;
+      let geq=0;
+      for(const u of teams) if(u!==t && pts[u]>=pts[t]) geq++;
+      if(geq>=2) safe[t]=false;
+    }
+  }
+  const set=new Set(teams.filter(t=>safe[t]));
+  _clinchMemo[letter]=set;
+  return set;
+}
+
 // Ranking of all 12 third-placed teams (only when ALL groups complete)
 function thirdPlaceTable(){
   const rows=[];
@@ -722,8 +768,11 @@ function resolveSpec(spec){
   let m = /^([12])([A-L])$/.exec(spec);
   if(m){
     const s=standings(m[2]); const t=s.ranked[+m[1]-1];
-    if(s.complete){ if(t) return {team:t.team,label:t.team,provisional:false}; }
-    else if(s.played>=1 && t){ return {team:t.team,label:t.team,provisional:true}; }
+    if(s.complete){ if(t) return {team:t.team,label:t.team,provisional:false,qualified:true}; }
+    else if(s.played>=1 && t){
+      const clinched=clinchedTeams(m[2]).has(t.team);
+      return {team:t.team,label:t.team,provisional:true,qualified:clinched};
+    }
     return {team:null,label:(m[1]==="1"?"Winner ":"Runner-up ")+m[2],provisional:false};
   }
   // third place slot
@@ -732,7 +781,7 @@ function resolveSpec(spec){
     if(a && a.alloc[spec]){
       const L=a.alloc[spec]; const s=standings(L);
       if(s.ranked[2] && (s.complete || s.played>=1))
-        return {team:s.ranked[2].team,label:s.ranked[2].team,provisional:!s.complete};
+        return {team:s.ranked[2].team,label:s.ranked[2].team,provisional:!s.complete,qualified:s.complete};
     }
     return {team:null,label:"3rd "+spec.slice(1).split("").join("/"),provisional:false};
   }
@@ -936,9 +985,10 @@ function renderGroups(){
 function renderKnockout(){
   const order=["R32","R16","QF","SF","FINAL"];
   let html=`<div class="hint">Slots fill automatically from the group tables. Teams tagged
-    <span class="projtag">PROJ</span> are live projections from the current standings and will
-    firm up as each group finishes — scores can only be entered once both teams are confirmed.
-    Winners advance through the bracket.</div>
+    <span class="qualtag">QUALIFIED</span> have mathematically secured a knockout spot — even if
+    their group isn't finished; teams tagged <span class="projtag">PROJ</span> are live projections
+    from the current standings and will firm up as each group finishes — scores can only be entered
+    once both teams' exact slots are locked. Winners advance through the bracket.</div>
     <div class="bracket-wrap"><div class="bracket">`;
   for(const round of order){
     const ms=KO_MATCHES.filter(m=>m.round===round);
@@ -970,11 +1020,15 @@ function koCard(m, standalone){
   function row(team,res,side){
     const won=o.winner&&team&&o.winner===team;
     const prov=team&&res.provisional;
+    const qual=team&&res.qualified;
     let cls = team?(won?"won":""):"tbd";
-    if(prov) cls+=" proj";
+    if(prov && !qual) cls+=" proj";
+    let tag="";
+    if(qual) tag='<span class="qualtag">QUALIFIED</span>';
+    else if(prov) tag='<span class="projtag">PROJ</span>';
     return `<div class="krow ${cls}">
       ${team?`<span class="flag">${flag(team)}</span>`:`<span class="flag">·</span>`}
-      <span class="nm">${esc(team||res.label)}${prov?'<span class="projtag">PROJ</span>':''}</span>
+      <span class="nm">${esc(team||res.label)}${tag}</span>
       <input class="ksc" type="number" min="0" max="99" inputmode="numeric"
         data-score="${m.id}" data-side="${side}" value="${side==='h'?hv:av}" ${dis} aria-label="score">
     </div>`;
@@ -1001,6 +1055,7 @@ function koCard(m, standalone){
 function renderAll(){
   clearKoMemo();
   _thirdAllocCache=null;_thirdAllocKey=null;
+  for(const k in _clinchMemo) delete _clinchMemo[k];
   renderFixtures(); renderGroups(); renderKnockout();
   el("#todayBadge").innerHTML = `Today: <b>${esc(fmtDay.format(new Date()))}</b>`;
   const etz = effectiveTz();
