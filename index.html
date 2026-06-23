@@ -1028,7 +1028,7 @@ function koCard(m, standalone){
     else if(prov) tag='<span class="projtag">PROJ</span>';
     return `<div class="krow ${cls}">
       ${team?`<span class="flag">${flag(team)}</span>`:`<span class="flag">·</span>`}
-      <span class="nm">${esc(team||res.label)}${tag}</span>
+      <span class="nm">${esc(team||res.label)}</span>${tag}
       <input class="ksc" type="number" min="0" max="99" inputmode="numeric"
         data-score="${m.id}" data-side="${side}" value="${side==='h'?hv:av}" ${dis} aria-label="score">
     </div>`;
