@@ -102,11 +102,13 @@
   }
   .gh-link:hover{color:var(--accent);opacity:1}
   nav.tabs{
-    display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;
+    display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;margin-top:16px;
     max-width:1180px;margin-left:auto;margin-right:auto;padding:0 20px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
   }
+  nav.tabs::-webkit-scrollbar{display:none}
   .tab{
-    appearance:none;border:1px solid var(--line);background:var(--panel);
+    appearance:none;flex:none;border:1px solid var(--line);background:var(--panel);
     color:var(--muted);font-family:"Rajdhani",system-ui,sans-serif;
     font-size:17px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;
     padding:9px 20px;border-radius:999px;transition:.15s;
@@ -117,8 +119,13 @@
     display:flex;gap:10px;align-items:center;flex-wrap:wrap;
     max-width:1180px;margin:14px auto 0;padding:0 20px;
   }
+  .toolbar-actions{
+    display:flex;gap:10px;align-items:center;flex-wrap:nowrap;flex:1 1 auto;
+    overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .toolbar-actions::-webkit-scrollbar{display:none}
   .btn{
-    appearance:none;cursor:pointer;border:1px solid var(--line);
+    appearance:none;flex:none;cursor:pointer;border:1px solid var(--line);
     background:var(--panel);color:var(--ink);font-weight:600;font-size:13px;
     padding:8px 14px;border-radius:10px;transition:.15s;
   }
@@ -458,11 +465,13 @@
 </nav>
 
 <div class="toolbar">
-  <button class="btn" id="jumpToday">Jump to today</button>
-  <button class="btn ghost" id="refreshBtn">Refresh</button>
-  <button class="btn ghost" id="exportBtn">Export results</button>
-  <button class="btn ghost" id="importBtn">Import</button>
-  <button class="btn danger ghost" id="resetBtn">Reset all</button>
+  <div class="toolbar-actions">
+    <button class="btn" id="jumpToday">Jump to today</button>
+    <button class="btn ghost" id="refreshBtn">Refresh</button>
+    <button class="btn ghost" id="exportBtn">Export results</button>
+    <button class="btn ghost" id="importBtn">Import</button>
+    <button class="btn danger ghost" id="resetBtn">Reset all</button>
+  </div>
   <label class="tzwrap" title="Times shown in this time zone (saved on this device)">
     <span>🌐 Time zone</span>
     <div class="tzcombo" id="tzCombo">
