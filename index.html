@@ -187,22 +187,20 @@
   .pastgroup>summary .count{margin-left:auto;font-weight:500;font-size:13px;font-family:"Segoe UI",system-ui,sans-serif}
   .pastgroup[open]>summary{margin-bottom:14px}
 
-  /* Match card — stacked scorecard: header (kickoff + tag), one row per
-     team with its score, then venue / form. */
+  /* Match card — centered: header (kickoff left, tag right), the matchup on a
+     single centered row (team — score — team), then venue / form. Compact so
+     more fixtures fit per screen. */
   .match{
-    display:flex;flex-direction:column;
+    display:flex;flex-direction:column;gap:9px;
     background:var(--panel);border:1px solid var(--line);
-    border-radius:var(--radius);padding:14px;margin:10px 0;
+    border-radius:var(--radius);padding:11px 16px;margin:8px 0;
   }
   .match.is-today{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot) inset, var(--shadow)}
 
-  .m-head{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding-bottom:11px;margin-bottom:12px;border-bottom:1px solid var(--line);
-  }
+  .m-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .m-kick{display:flex;align-items:baseline;gap:8px;min-width:0;font-variant-numeric:tabular-nums}
   .m-kick .m-t{
-    font-family:"Rajdhani",system-ui,sans-serif;font-weight:700;font-size:17px;
+    font-family:"Rajdhani",system-ui,sans-serif;font-weight:700;font-size:16px;
     letter-spacing:.5px;color:var(--ink);
   }
   .m-kick .m-d{font-size:12.5px;color:var(--muted)}
@@ -213,26 +211,26 @@
   .tag.grp{color:var(--accent)}
   .tag.ko{color:var(--accent-2)}
 
-  .m-rows{display:flex;flex-direction:column;gap:9px}
-  .m-row{display:flex;align-items:center;gap:12px}
-  .m-row .side{flex:1;min-width:0;display:flex;align-items:center;gap:11px;font-weight:600;font-size:15.5px}
-  .m-row .side .flag{flex:none;font-size:22px;width:27px;text-align:center}
-  .m-row .side .nm{min-width:0;overflow-wrap:anywhere;line-height:1.25}
-  .m-row .side.tbd{color:var(--muted);font-weight:500;font-style:italic}
-  .m-row .side.won .nm{color:var(--accent)}
+  .m-vs{display:flex;align-items:center;gap:14px}
+  .m-vs .side{flex:1;min-width:0;display:flex;align-items:center;gap:10px;font-weight:600;font-size:15.5px}
+  .m-vs .side.home{justify-content:flex-end;text-align:right}
+  .m-vs .side.away{justify-content:flex-start;text-align:left}
+  .m-vs .side .flag{flex:none;font-size:21px;width:25px;text-align:center}
+  .m-vs .side .nm{min-width:0;overflow-wrap:anywhere;line-height:1.2}
+  .m-vs .side.tbd{color:var(--muted);font-weight:500;font-style:italic}
+  .m-vs .side.won .nm{color:var(--accent)}
+  .m-score-pair{flex:none;display:flex;align-items:center;gap:8px}
+  .m-dash{color:var(--muted);font-weight:700}
   .m-score{
-    flex:none;width:48px;height:44px;text-align:center;
+    width:44px;height:40px;text-align:center;
     font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;
-    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;
+    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:9px;
   }
   .m-score:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,160,.25)}
   .m-score:disabled{opacity:.35}
 
-  .m-venue{
-    margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
-    color:var(--muted);font-size:12.5px;
-  }
-  .pen{display:flex;gap:6px;align-items:center;margin-top:10px}
+  .m-venue{color:var(--muted);font-size:12px;text-align:center}
+  .pen{display:flex;gap:6px;align-items:center;justify-content:center}
   .pen .lbl{font-size:11px;color:var(--muted)}
   .pen button{
     font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;
@@ -409,9 +407,12 @@
   #toTop svg{width:20px;height:20px}
   @media(max-width:560px){
     #toTop{right:14px;bottom:14px}
-    .match{padding:12px}
-    .m-kick .m-t{font-size:16px}
-    .m-row .side{font-size:15px}
+    .match{padding:11px 12px}
+    .m-vs{gap:9px}
+    .m-vs .side{font-size:14.5px;gap:7px}
+    .m-vs .side .flag{font-size:19px;width:22px}
+    .m-score{width:40px;height:38px;font-size:17px}
+    .m-score-pair{gap:6px}
   }
 </style>
 </head>
@@ -1066,17 +1067,17 @@ function scoreInput(id, side, enabled){
   return `<input class="m-score" type="number" min="0" max="99" inputmode="numeric" data-score="${id}" data-side="${side}" value="${v}" ${enabled?"":"disabled"} aria-label="${side==='h'?'home':'away'} score">`;
 }
 
-// One team row: flag + name on the left, its score box on the right.
-// info = {team, label, won}; a null team renders the TBD label.
-function teamRow(side, info, id, enabled){
-  const inner = info.team
-    ? `<span class="flag">${flag(info.team)}</span><span class="nm">${esc(info.team)}</span>`
-    : `<span class="nm">${esc(info.label)}</span>`;
-  const cls = (info.team ? "" : " tbd") + (info.won ? " won" : "");
-  return `<div class="m-row"><span class="side${cls}">${inner}</span>${scoreInput(id, side, enabled)}</div>`;
+// One side of the centered matchup. role = "home" | "away" (home sits left of the
+// score with the name hugging the centre, away mirrors it). info = {team, label, won}.
+function teamSide(role, info){
+  const cls = `side ${role}` + (info.team ? "" : " tbd") + (info.won ? " won" : "");
+  if(!info.team) return `<span class="${cls}"><span class="nm">${esc(info.label)}</span></span>`;
+  const fl = `<span class="flag">${flag(info.team)}</span>`;
+  const nm = `<span class="nm">${esc(info.team)}</span>`;
+  return `<span class="${cls}">${role==="home" ? fl+nm : nm+fl}</span>`;
 }
 
-// Stacked match card shared by group and knockout fixtures.
+// Centered match card shared by group and knockout fixtures.
 function matchCard(m, tagCls, tagLabel, home, away, enabled, isGroup, formPanel){
   const r=getRes(m.id)||{};
   const venueName=VENUE[m.city]||"";
@@ -1092,9 +1093,14 @@ function matchCard(m, tagCls, tagLabel, home, away, enabled, isGroup, formPanel)
       <div class="m-kick"><span class="m-t">${fmtTime.format(dOf(m.utc))}</span><span class="m-d">${esc(fmtShort.format(dOf(m.utc)))}</span></div>
       <span class="tag ${tagCls}">${esc(tagLabel)}</span>
     </div>
-    <div class="m-rows">
-      ${teamRow("h", home, m.id, enabled)}
-      ${teamRow("a", away, m.id, enabled)}
+    <div class="m-vs">
+      ${teamSide("home", home)}
+      <div class="m-score-pair">
+        ${scoreInput(m.id, "h", enabled)}
+        <span class="m-dash">–</span>
+        ${scoreInput(m.id, "a", enabled)}
+      </div>
+      ${teamSide("away", away)}
     </div>
     <div class="m-venue">${venue}</div>
     ${pen}
