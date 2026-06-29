@@ -9,9 +9,12 @@ const SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(CACHE_VERSION).then((c) => c.addAll(SHELL)));
+});
+
+// Activate the waiting worker only when the page asks (user tapped "Reload").
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

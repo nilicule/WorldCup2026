@@ -413,6 +413,16 @@
   #toTop.show{opacity:1;visibility:visible;transform:translateY(0)}
   #toTop:hover{border-color:var(--accent);background:var(--panel)}
   #toTop svg{width:20px;height:20px}
+  .updatebar{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(140%);
+    z-index:50;display:flex;align-items:center;gap:12px;
+    padding:10px 14px;border-radius:999px;
+    background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);
+    color:var(--ink);font-size:14px;font-weight:600;
+    opacity:0;pointer-events:none;transition:transform .25s ease, opacity .25s ease;
+  }
+  .updatebar.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
+  .updatebar .btn{padding:6px 12px}
   @media(max-width:560px){
     #toTop{right:14px;bottom:14px}
     .match{padding:11px 12px}
@@ -485,6 +495,11 @@
     <path d="M12 19V5M5 12l7-7 7 7"/>
   </svg>
 </button>
+
+<div id="updateBar" class="updatebar">
+  <span>A new version is available.</span>
+  <button id="updateReload" class="btn">Reload</button>
+</div>
 
 <script>
 "use strict";
@@ -1637,10 +1652,29 @@ window.addEventListener("load",()=>{
   toggle();
 })();
 
-/* ---- PWA: register the service worker (relative path → scope /worldcup/) ---- */
+/* ---- PWA: register the service worker + surface app updates ---- */
 if ("serviceWorker" in navigator) {
+  let updating = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (updating) location.reload();   // reload once, only for a user-initiated update
+  });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      const offer = (worker) => {
+        const bar = el("#updateBar");
+        if (!bar || !worker) return;
+        bar.classList.add("show");
+        el("#updateReload").onclick = () => { updating = true; worker.postMessage("SKIP_WAITING"); };
+      };
+      if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) offer(nw);
+        });
+      });
+    }).catch(() => {});
   });
 }
 </script>
