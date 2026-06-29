@@ -1600,6 +1600,9 @@ function mergeRemote(remote){
 let refreshing = false;
 function refreshResults(){
   if(refreshing) return Promise.resolve();
+  // Don't yank focus out of an in-progress score entry: skip while a score input is focused.
+  const ae = document.activeElement;
+  if(ae && ae.closest && ae.closest("[data-score]")) return Promise.resolve();
   refreshing = true;
   return fetch(REMOTE_URL, {cache:"no-store"})
     .then(r => r.ok ? r.json() : null)
