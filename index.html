@@ -315,6 +315,22 @@
   .champion b{color:var(--accent-2);font-size:20px}
   .hint{color:var(--muted);font-size:12.5px;margin:6px 2px 16px}
 
+  /* ---------- Radial bracket ---------- */
+  .radial-wrap{overflow-x:auto;padding:8px;border:1px solid var(--line);border-radius:var(--radius);
+    background:radial-gradient(circle at 50% 50%, #0c0a06 0%, #060606 72%);}
+  .radial-wrap svg{display:block;width:100%;height:auto;min-width:680px;max-width:900px;margin:0 auto}
+  .rad-conn{fill:none;stroke:url(#radLine);stroke-width:1.4;opacity:.45}
+  .rad-conn.live{opacity:.9;stroke-width:1.8}
+  .rad-badge{fill:#15110a;stroke:#5a4a22;stroke-width:1.5}
+  .rad-badge.alive{stroke:#e8b84b;stroke-width:2}
+  .rad-badge.dim{opacity:.32}
+  .rad-badge.ph{fill:#111;stroke:#2a2a2a;stroke-dasharray:2 2}
+  .rad-flag{text-anchor:middle;dominant-baseline:central}
+  .rad-label{fill:#cdbd92;font:600 12px "Rajdhani",system-ui,sans-serif}
+  .rad-label.dim{fill:#6a6450}
+  .rad-ph-label{fill:#7c7458;font:600 10px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+  .rad-champ{fill:#ffd86b;font:700 22px "Rajdhani",system-ui,sans-serif;text-anchor:middle}
+
   .empty{color:var(--muted);text-align:center;padding:40px 0}
   footer{max-width:1180px;margin:0 auto 40px;padding:0 20px;color:var(--muted);font-size:12px}
   a{color:var(--accent)}
@@ -356,6 +372,7 @@
   <button class="tab active" data-view="fixtures">Fixtures</button>
   <button class="tab" data-view="groups">Groups</button>
   <button class="tab" data-view="knockout">Knockout</button>
+  <button class="tab" data-view="radial">Radial</button>
 </nav>
 
 <div class="toolbar">
@@ -379,6 +396,7 @@
   <section class="view active" id="view-fixtures"></section>
   <section class="view" id="view-groups"></section>
   <section class="view" id="view-knockout"></section>
+  <section class="view" id="view-radial"></section>
 </main>
 
 <footer>
@@ -1081,6 +1099,12 @@ function koCard(m, standalone){
   </div>`;
 }
 
+// ---- Radial bracket (display-only) ----
+function renderRadial(){
+  el("#view-radial").innerHTML =
+    `<div class="radial-wrap" style="text-align:center;color:#7c7458;padding:40px">Radial bracket loading…</div>`;
+}
+
 /* ============================================================
    EVENTS
    ============================================================ */
@@ -1088,7 +1112,7 @@ function renderAll(){
   clearKoMemo();
   _thirdAllocCache=null;_thirdAllocKey=null;
   for(const k in _clinchMemo) delete _clinchMemo[k];
-  renderFixtures(); renderGroups(); renderKnockout();
+  renderFixtures(); renderGroups(); renderKnockout(); renderRadial();
   el("#todayBadge").innerHTML = `Today: <b>${esc(fmtDay.format(new Date()))}</b>`;
   const etz = effectiveTz();
   el("#tzName").textContent = etz.split("/").pop().replace(/_/g," ") + (TZ==="auto" ? " (device)" : "");
