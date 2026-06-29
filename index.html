@@ -874,6 +874,39 @@ function barFrac(a, b){
   return Math.max(0, Math.min(1, s));
 }
 
+// All completed matches `team` played before `beforeUtc`, with aggregate form.
+// Penalty shootouts are ignored: a drawn scoreline counts as a draw.
+function teamForm(team, beforeUtc){
+  const games = [];
+  const consider = (utc, home, away, id) => {
+    if (home !== team && away !== team) return;
+    if (beforeUtc && !(utc < beforeUtc)) return;
+    const r = getRes(id);
+    if (!hasScore(r)) return;
+    const isHome = home === team;
+    const gf = isHome ? r.h : r.a;
+    const ga = isHome ? r.a : r.h;
+    const opp = isHome ? away : home;
+    const res = gf > ga ? 'W' : gf < ga ? 'L' : 'D';
+    games.push({ utc, opp, gf, ga, res });
+  };
+  for (const m of GROUP_MATCHES) consider(m.utc, m.home, m.away, m.id);
+  for (const m of KO_MATCHES){
+    const o = koOutcome(m.n);
+    if (o.home && o.away) consider(m.utc, o.home, o.away, m.id);
+  }
+  games.sort((x, y) => x.utc < y.utc ? -1 : x.utc > y.utc ? 1 : 0);
+  const agg = { games, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
+  for (const g of games){
+    agg.p++; agg.gf += g.gf; agg.ga += g.ga;
+    if (g.res === 'W'){ agg.w++; agg.pts += 3; }
+    else if (g.res === 'D'){ agg.d++; agg.pts += 1; }
+    else agg.l++;
+  }
+  agg.gd = agg.gf - agg.ga;
+  return agg;
+}
+
 // ---- Fixtures ----
 function renderFixtures(){
   const all = [
