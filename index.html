@@ -230,6 +230,60 @@
     font-size:11px;color:var(--muted);text-align:right;margin-top:4px
   }
 
+  /* ---- Today's-match form indicator ---- */
+  .match-form{grid-column:1 / -1;margin-top:4px}
+  .match-form>summary{
+    list-style:none;cursor:pointer;user-select:none;
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:700;letter-spacing:.3px;color:var(--muted);
+    padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);
+  }
+  .match-form>summary::-webkit-details-marker{display:none}
+  .match-form>summary::after{content:"\25be";font-size:10px;transition:transform .15s ease}
+  .match-form[open]>summary::after{transform:rotate(180deg)}
+  .match-form>summary:hover{color:var(--ink);border-color:var(--accent)}
+  .mf-body,.mf-empty{
+    margin-top:10px;padding:12px 14px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+  }
+  .mf-empty{color:var(--muted);font-size:12.5px}
+  .mf-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:12.5px;font-weight:700}
+  .mf-team{display:inline-flex;align-items:center;gap:6px;min-width:0}
+  .mf-team .flag{font-size:16px}
+  .mf-team-b{text-align:right}
+  .hh-row{display:grid;grid-template-columns:2.6em 1fr 2.6em;align-items:center;gap:8px;margin:5px 0}
+  .hh-num{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;color:var(--ink)}
+  .hh-num-b{text-align:right}
+  .hh-track{position:relative;display:flex;align-items:center;height:14px}
+  .hh-half{flex:1;display:flex;height:8px;overflow:hidden}
+  .hh-left{justify-content:flex-end;border-right:2px solid var(--line)}
+  .hh-fill{height:100%}
+  .hh-fa{background:var(--accent)}
+  .hh-fb{background:var(--accent-2)}
+  .hh-left .hh-fill{border-radius:3px 0 0 3px}
+  .hh-right .hh-fill{border-radius:0 3px 3px 0}
+  .hh-mid{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-size:9.5px;font-weight:700;letter-spacing:.4px;color:var(--muted);
+    background:var(--panel-2);padding:0 5px;pointer-events:none;
+  }
+  .mf-forms{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
+    margin-top:12px;padding-top:10px;border-top:1px solid var(--line);
+  }
+  .form-pills{display:flex;gap:4px;flex-wrap:wrap}
+  .form-b{justify-content:flex-end}
+  .form-pill{
+    width:18px;height:18px;border-radius:5px;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;color:#0b1220;
+  }
+  .form-pill.w{background:var(--win)}
+  .form-pill.d{background:var(--muted)}
+  .form-pill.l{background:var(--hot)}
+  .form-none{color:var(--muted)}
+  .mf-formlabel{font-size:9.5px;font-weight:700;letter-spacing:.4px;color:var(--muted)}
+
   /* ---------- Groups ---------- */
   .groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
   .gcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
@@ -905,6 +959,58 @@ function teamForm(team, beforeUtc){
   }
   agg.gd = agg.gf - agg.ga;
   return agg;
+}
+
+// W/D/L pills for one team, oldest → newest, left to right.
+function formPillsHtml(games){
+  if (!games.length) return `<span class="form-none">—</span>`;
+  return games.map(g =>
+    `<i class="form-pill ${g.res.toLowerCase()}" title="${esc(g.res)} ${g.gf}–${g.ga} v ${esc(g.opp)}">${g.res}</i>`
+  ).join("");
+}
+
+// Click-to-reveal head-to-head panel for a single today fixture.
+function matchupPanelHtml(home, away, utc){
+  const A = teamForm(home, utc), B = teamForm(away, utc);
+  const summary =
+    `<summary>Form &amp; matchup</summary>`;
+  if (A.p === 0 && B.p === 0){
+    return `<details class="match-form">${summary}
+      <div class="mf-empty">No games played yet.</div></details>`;
+  }
+  // signed display for goal difference; plain for points / goals-for
+  const sgn = v => v > 0 ? "+" + v : v < 0 ? "−" + Math.abs(v) : "0";
+  const rows = [
+    { lbl: "Pts", a: A.pts, b: B.pts, fmt: String },
+    { lbl: "GD",  a: A.gd,  b: B.gd,  fmt: sgn },
+    { lbl: "GF",  a: A.gf,  b: B.gf,  fmt: String },
+  ];
+  const barRow = r => {
+    const s = barFrac(r.a, r.b);
+    const hw = (s * 100).toFixed(1), aw = ((1 - s) * 100).toFixed(1);
+    return `<div class="hh-row">
+      <span class="hh-num">${esc(r.fmt(r.a))}</span>
+      <span class="hh-track">
+        <span class="hh-half hh-left"><i class="hh-fill hh-fa" style="width:${hw}%"></i></span>
+        <span class="hh-mid">${r.lbl}</span>
+        <span class="hh-half hh-right"><i class="hh-fill hh-fb" style="width:${aw}%"></i></span>
+      </span>
+      <span class="hh-num hh-num-b">${esc(r.fmt(r.b))}</span>
+    </div>`;
+  };
+  return `<details class="match-form">${summary}
+    <div class="mf-body">
+      <div class="mf-head">
+        <span class="mf-team"><span class="flag">${flag(home)}</span>${esc(home)}</span>
+        <span class="mf-team mf-team-b">${esc(away)}<span class="flag">${flag(away)}</span></span>
+      </div>
+      ${rows.map(barRow).join("")}
+      <div class="mf-forms">
+        <span class="form-pills">${formPillsHtml(A.games)}</span>
+        <span class="mf-formlabel">Form</span>
+        <span class="form-pills form-b">${formPillsHtml(B.games)}</span>
+      </div>
+    </div></details>`;
 }
 
 // ---- Fixtures ----
