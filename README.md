@@ -3,8 +3,9 @@
 A single-page web app for following the 2026 FIFA World Cup — fill in scores, watch the
 group standings update live, and see the knockout bracket build itself as results come in.
 
-The whole thing is one self-contained `index.html` file: no build step, no backend, no
-dependencies. Open it in a browser and it works.
+The core is one `index.html` file — no build step, no backend, no dependencies. A small
+service worker and web manifest make it installable to your home screen and usable offline.
+Open `index.html` in a browser and it works.
 
 ## Features
 
@@ -23,6 +24,9 @@ dependencies. Open it in a browser and it works.
 - **Import / Export** — back up or share your results as a JSON file.
 - **Shared results feed** — on load the app fetches `worldcup2026-results.json` from this
   repo so the published set of actual results stays in sync.
+- **Installable / offline** — add it to your phone's home screen for a fullscreen app that
+  keeps working offline. Scores stay fresh: when online it always fetches the latest from
+  the published feed, and falls back to the last-seen results when offline.
 
 ## Usage
 
@@ -55,4 +59,7 @@ commits any new scores, so the published feed stays current on its own.
 | `worldcup2026-results.json` | Published actual match results, fetched on load. |
 | `update-results.sh` | Fetches finished match scores from the FIFA API. |
 | `.github/workflows/update-results.yml` | Hourly GitHub Action that runs the updater. |
+| `manifest.webmanifest` | Web app manifest (name, icons, colors) for installation. |
+| `sw.js` | Service worker: offline caching, freshness-first for scores and app code. |
+| `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `icon-180.png` | App / home-screen icons. |
 | `favicon.svg` | App icon. |
