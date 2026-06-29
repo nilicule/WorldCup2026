@@ -1608,6 +1608,13 @@ window.addEventListener("load",()=>{
   btn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
   toggle();
 })();
+
+/* ---- PWA: register the service worker (relative path → scope /worldcup/) ---- */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
