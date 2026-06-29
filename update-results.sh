@@ -49,7 +49,7 @@ RESULTS_JSON="$SCRIPT_DIR/worldcup2026-results.json"
 API="https://api.fifa.com/api/v3"
 CURL=(curl -sf --compressed --connect-timeout 10 -L)
 
-TMP_SCHED="$(mktemp -t wc2026sched)"
+TMP_SCHED="$(mktemp "${TMPDIR:-/tmp}/wc2026sched.XXXXXX")"
 trap 'rm -f "$TMP_SCHED"' EXIT
 
 # ---------------------------------------------------------------------------
