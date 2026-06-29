@@ -125,6 +125,8 @@
   .btn:hover{border-color:#33466e}
   .btn.ghost{color:var(--muted)}
   .btn.danger:hover{border-color:var(--hot);color:var(--hot)}
+  .btn.busy{opacity:.6;pointer-events:none}
+  .btn.busy::after{content:"…"}
   .tzwrap{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted);font-size:13px;font-weight:600}
   .tzwrap select{
     appearance:none;cursor:pointer;background:var(--panel);color:var(--ink);
@@ -447,6 +449,7 @@
 
 <div class="toolbar">
   <button class="btn" id="jumpToday">Jump to today</button>
+  <button class="btn ghost" id="refreshBtn">Refresh</button>
   <button class="btn ghost" id="exportBtn">Export results</button>
   <button class="btn ghost" id="importBtn">Import</button>
   <button class="btn danger ghost" id="resetBtn">Reset all</button>
@@ -1551,6 +1554,14 @@ el("#resetBtn").addEventListener("click",()=>{
     results={}; saveResults(); renderAll();
   }
 });
+el("#refreshBtn").addEventListener("click", () => {
+  const b = el("#refreshBtn");
+  b.disabled = true; b.classList.add("busy");
+  Promise.all([
+    Promise.resolve(refreshResults()),
+    new Promise(r => setTimeout(r, 400))
+  ]).finally(() => { b.disabled = false; b.classList.remove("busy"); });
+});
 el("#exportBtn").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(results,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
@@ -1586,10 +1597,24 @@ function mergeRemote(remote){
   }
   if(changed){ saveResults(); renderAll(); }
 }
-fetch(REMOTE_URL,{cache:"no-store"})
-  .then(r=>r.ok?r.json():null)
-  .then(mergeRemote)
-  .catch(()=>{ /* offline or unavailable — keep local results */ });
+let refreshing = false;
+function refreshResults(){
+  if(refreshing) return Promise.resolve();
+  refreshing = true;
+  return fetch(REMOTE_URL, {cache:"no-store"})
+    .then(r => r.ok ? r.json() : null)
+    .then(mergeRemote)
+    .catch(() => { /* offline or unavailable — keep local results */ })
+    .finally(() => { refreshing = false; });
+}
+refreshResults();
+// Re-pull published results whenever the app returns to the foreground or reconnects,
+// so an installed/long-open PWA stays current without a manual reload.
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible") refreshResults();
+});
+window.addEventListener("focus", refreshResults);
+window.addEventListener("online", refreshResults);
 
 // Init
 renderAll();
