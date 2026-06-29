@@ -1103,7 +1103,7 @@ function koCard(m, standalone){
 const RAD_CX=600, RAD_CY=600;
 const RAD_RING={leaf:470, R32:392, R16:312, QF:230, SF:142, FINAL:0};
 const RAD_BADGE={R32:16, R16:15, QF:15, SF:16};
-const f = x => Math.round(x*10)/10;
+const radF = x => Math.round(x*10)/10;
 
 function radPolar(angleDeg, r){
   const a = angleDeg*Math.PI/180;
@@ -1166,14 +1166,14 @@ function radConnector(parent, child){
   const p3=radPolar(child.angle, mid);
   const p4=radPolar(child.angle, rc);
   const sweep = child.angle < parent.angle ? 1 : 0;   // y is flipped in radPolar
-  return `M${f(p1.x)},${f(p1.y)} L${f(p2.x)},${f(p2.y)} `+
-         `A${f(mid)},${f(mid)} 0 0 ${sweep} ${f(p3.x)},${f(p3.y)} `+
-         `L${f(p4.x)},${f(p4.y)}`;
+  return `M${radF(p1.x)},${radF(p1.y)} L${radF(p2.x)},${radF(p2.y)} `+
+         `A${radF(mid)},${radF(mid)} 0 0 ${sweep} ${radF(p3.x)},${radF(p3.y)} `+
+         `L${radF(p4.x)},${radF(p4.y)}`;
 }
 function radStraight(parent, child){
   const p1=radPolar(parent.angle, parent.radius);
   const p2=radPolar(child.angle, child.radius);
-  return `M${f(p1.x)},${f(p1.y)} L${f(p2.x)},${f(p2.y)}`;
+  return `M${radF(p1.x)},${radF(p1.y)} L${radF(p2.x)},${radF(p2.y)}`;
 }
 function radDefs(){
   return `<defs>
@@ -1210,8 +1210,8 @@ function radLeafLabel(node, team, eliminated){
   let rot = -node.angle, anchor = "start";
   const a = ((node.angle % 360) + 360) % 360;
   if(a>90 && a<270){ rot += 180; anchor = "end"; }   // keep text upright on the left
-  return `<text class="rad-label${eliminated?" dim":""}" x="${f(p.x)}" y="${f(p.y)}" `+
-    `text-anchor="${anchor}" transform="rotate(${f(rot)} ${f(p.x)} ${f(p.y)})">${esc(team)}</text>`;
+  return `<text class="rad-label${eliminated?" dim":""}" x="${radF(p.x)}" y="${radF(p.y)}" `+
+    `text-anchor="${anchor}" transform="rotate(${radF(rot)} ${radF(p.x)} ${radF(p.y)})">${esc(team)}</text>`;
 }
 function radNodeSvg(node){
   if(node.round==="FINAL") return "";            // champion handled by center
@@ -1219,7 +1219,7 @@ function radNodeSvg(node){
   const parent = node.parent;
   const eliminated = !!(parent && team && teamOf(parent) && teamOf(parent)!==team);
   const r = node.kind==="slot" ? 19 : (RAD_BADGE[node.round] || 15);
-  const x=f(node.x), y=f(node.y);
+  const x=radF(node.x), y=radF(node.y);
   if(!team){
     let lbl = "";
     if(node.kind==="slot")
