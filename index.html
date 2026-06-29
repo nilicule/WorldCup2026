@@ -1100,9 +1100,76 @@ function koCard(m, standalone){
 }
 
 // ---- Radial bracket (display-only) ----
+const RAD_CX=600, RAD_CY=600;
+const RAD_RING={leaf:470, R32:392, R16:312, QF:230, SF:142, FINAL:0};
+const RAD_BADGE={R32:16, R16:15, QF:15, SF:16};
+const f = x => Math.round(x*10)/10;
+
+function radPolar(angleDeg, r){
+  const a = angleDeg*Math.PI/180;
+  return { x: RAD_CX + r*Math.cos(a), y: RAD_CY - r*Math.sin(a) };
+}
+
+function koChild(spec, parent){
+  const w = /^W(\d+)$/.exec(spec);
+  const node = w ? koMatchNode(+w[1]) : { kind:"slot", spec };
+  node.parent = parent;
+  return node;
+}
+function koMatchNode(n){
+  const m = KO_BY_N[n];
+  const node = { kind:"match", n, round:m.round };
+  node.home = koChild(m.homeSpec, node);
+  node.away = koChild(m.awaySpec, node);
+  return node;
+}
+function buildKoTree(){
+  const root = koMatchNode(104);
+  root.parent = null;
+  return root;
+}
+
+function koLeaves(node, out){
+  if(node.kind==="slot"){ out.push(node); return out; }
+  koLeaves(node.home, out); koLeaves(node.away, out);
+  return out;
+}
+function collectNodes(node, out){
+  out.push(node);
+  if(node.kind==="match"){ collectNodes(node.home,out); collectNodes(node.away,out); }
+  return out;
+}
+function teamOf(node){
+  return node.kind==="slot" ? resolveSpec(node.spec).team : koOutcome(node.n).winner;
+}
+
+function assignLeafAngles(leaves){
+  const gap=18;                 // half-gap (deg) at top and bottom
+  const leftStart=90+gap, leftEnd=270-gap;     // left half: 101 subtree
+  const rightStart=90-gap, rightEnd=-90+gap;   // right half: 102 subtree
+  for(let i=0;i<16;i++) leaves[i].angle    = leftStart  + (leftEnd-leftStart)*(i/15);
+  for(let i=0;i<16;i++) leaves[16+i].angle = rightStart + (rightEnd-rightStart)*(i/15);
+}
+function assignLayout(node){
+  if(node.kind==="slot"){ node.radius=RAD_RING.leaf; return node.angle; }
+  const ha=assignLayout(node.home), aa=assignLayout(node.away);
+  node.angle=(ha+aa)/2;
+  node.radius=RAD_RING[node.round];
+  return node.angle;
+}
+function nodeXY(node){ const p=radPolar(node.angle, node.radius); node.x=p.x; node.y=p.y; }
+
 function renderRadial(){
+  const root = buildKoTree();
+  const leaves = koLeaves(root, []);
+  assignLeafAngles(leaves);
+  assignLayout(root);
+  const all = collectNodes(root, []);
+  all.forEach(nodeXY);
+  window.__radDebug = { root, leaves, all };   // temporary, for verification
   el("#view-radial").innerHTML =
-    `<div class="radial-wrap" style="text-align:center;color:#7c7458;padding:40px">Radial bracket loading…</div>`;
+    `<div class="radial-wrap" style="text-align:center;color:#7c7458;padding:40px">`+
+    `Layout ready: ${leaves.length} leaves, ${all.length} nodes.</div>`;
 }
 
 /* ============================================================
