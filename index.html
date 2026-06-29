@@ -1062,6 +1062,7 @@ function sideHtml(team,label,won){
 function fixtureGroupRow(m){
   const r=getRes(m.id);
   const tdy=isToday(m.utc)?" is-today":"";
+  const formPanel = isToday(m.utc) ? matchupPanelHtml(m.home, m.away, m.utc) : "";
   return `<div class="match${tdy}" data-id="${m.id}">
     ${timeCell(m.utc)}
     <div class="m-meta">
@@ -1074,6 +1075,7 @@ function fixtureGroupRow(m){
         <span>${esc(VENUE[m.city]||"")}, ${esc(m.city)}</span></div>
     </div>
     ${scoreEntry(m.id, true, true)}
+    ${formPanel}
   </div>`;
 }
 
@@ -1081,6 +1083,7 @@ function fixtureKoRow(m){
   const o=koOutcome(m.n);
   const tdy=isToday(m.utc)?" is-today":"";
   const both = o.home && o.away;
+  const formPanel = (isToday(m.utc) && both) ? matchupPanelHtml(o.home, o.away, m.utc) : "";
   return `<div class="match${tdy}" data-id="${m.id}">
     ${timeCell(m.utc)}
     <div class="m-meta">
@@ -1093,6 +1096,7 @@ function fixtureKoRow(m){
         <span>${esc(VENUE[m.city]||"")}, ${esc(m.city)}</span></div>
     </div>
     ${scoreEntry(m.id, both, false)}
+    ${formPanel}
   </div>`;
 }
 
