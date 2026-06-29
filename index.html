@@ -1200,6 +1200,40 @@ function radCenter(){
   return s;
 }
 
+function shortSlot(spec){
+  if(/^[12][A-L]$/.test(spec)) return spec;     // e.g. 1A, 2B
+  if(/^3/.test(spec)) return "3rd";             // third-place slot
+  return spec;
+}
+function radLeafLabel(node, team, eliminated){
+  const p = radPolar(node.angle, RAD_RING.leaf + 26);
+  let rot = -node.angle, anchor = "start";
+  const a = ((node.angle % 360) + 360) % 360;
+  if(a>90 && a<270){ rot += 180; anchor = "end"; }   // keep text upright on the left
+  return `<text class="rad-label${eliminated?" dim":""}" x="${f(p.x)}" y="${f(p.y)}" `+
+    `text-anchor="${anchor}" transform="rotate(${f(rot)} ${f(p.x)} ${f(p.y)})">${esc(team)}</text>`;
+}
+function radNodeSvg(node){
+  if(node.round==="FINAL") return "";            // champion handled by center
+  const team = teamOf(node);
+  const parent = node.parent;
+  const eliminated = !!(parent && team && teamOf(parent) && teamOf(parent)!==team);
+  const r = node.kind==="slot" ? 19 : (RAD_BADGE[node.round] || 15);
+  const x=f(node.x), y=f(node.y);
+  if(!team){
+    let lbl = "";
+    if(node.kind==="slot")
+      lbl = `<text class="rad-ph-label" x="${x}" y="${y}">${esc(shortSlot(node.spec))}</text>`;
+    return `<circle class="rad-badge ph" cx="${x}" cy="${y}" r="${r}"/>${lbl}`;
+  }
+  const cls = eliminated ? "dim" : "alive";
+  const fs = node.kind==="slot" ? 22 : 17;
+  let out = `<circle class="rad-badge ${cls}" cx="${x}" cy="${y}" r="${r}"/>`+
+    `<text class="rad-flag" x="${x}" y="${y}" font-size="${fs}">${flag(team)}</text>`;
+  if(node.kind==="slot") out += radLeafLabel(node, team, eliminated);
+  return out;
+}
+
 function renderRadial(){
   const root = buildKoTree();
   const leaves = koLeaves(root, []);
@@ -1207,7 +1241,6 @@ function renderRadial(){
   assignLayout(root);
   const all = collectNodes(root, []);
   all.forEach(nodeXY);
-  window.__radDebug = { root, leaves, all };   // temporary, for verification
   let conns="";
   for(const node of all){
     if(node.kind!=="match") continue;
@@ -1216,11 +1249,14 @@ function renderRadial(){
       conns += `<path class="rad-conn${teamOf(ch)?" live":""}" d="${d}"/>`;
     }
   }
+  let nodes="";
+  for(const node of all) nodes += radNodeSvg(node);
   el("#view-radial").innerHTML =
     `<div class="radial-wrap"><svg viewBox="0 0 1200 1200" role="img" aria-label="Radial knockout bracket">`+
     radDefs()+
     `<circle cx="${RAD_CX}" cy="${RAD_CY}" r="250" fill="url(#radGlow)"/>`+
     conns+
+    nodes+
     radCenter()+
     `</svg></div>`;
 }
