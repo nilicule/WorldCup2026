@@ -1159,6 +1159,47 @@ function assignLayout(node){
 }
 function nodeXY(node){ const p=radPolar(node.angle, node.radius); node.x=p.x; node.y=p.y; }
 
+function radConnector(parent, child){
+  const rp=parent.radius, rc=child.radius, mid=(rp+rc)/2;
+  const p1=radPolar(parent.angle, rp);
+  const p2=radPolar(parent.angle, mid);
+  const p3=radPolar(child.angle, mid);
+  const p4=radPolar(child.angle, rc);
+  const sweep = child.angle < parent.angle ? 1 : 0;   // y is flipped in radPolar
+  return `M${f(p1.x)},${f(p1.y)} L${f(p2.x)},${f(p2.y)} `+
+         `A${f(mid)},${f(mid)} 0 0 ${sweep} ${f(p3.x)},${f(p3.y)} `+
+         `L${f(p4.x)},${f(p4.y)}`;
+}
+function radStraight(parent, child){
+  const p1=radPolar(parent.angle, parent.radius);
+  const p2=radPolar(child.angle, child.radius);
+  return `M${f(p1.x)},${f(p1.y)} L${f(p2.x)},${f(p2.y)}`;
+}
+function radDefs(){
+  return `<defs>
+    <radialGradient id="radGlow">
+      <stop offset="0%" stop-color="#ffcf6a" stop-opacity=".55"/>
+      <stop offset="45%" stop-color="#a9781f" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="radLine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5a4a22"/>
+      <stop offset="50%" stop-color="#e8b84b"/>
+      <stop offset="100%" stop-color="#5a4a22"/>
+    </linearGradient>
+  </defs>`;
+}
+function radCenter(){
+  const champ = koOutcome(104).winner;
+  let s = `<circle cx="${RAD_CX}" cy="${RAD_CY}" r="150" fill="url(#radGlow)"/>`+
+    `<text x="${RAD_CX}" y="${RAD_CY}" font-size="58" text-anchor="middle" dominant-baseline="central">🏆</text>`;
+  if(champ){
+    s += `<text class="rad-flag" x="${RAD_CX}" y="${RAD_CY+48}" font-size="26">${flag(champ)}</text>`+
+         `<text class="rad-champ" x="${RAD_CX}" y="${RAD_CY+84}">${esc(champ)}</text>`;
+  }
+  return s;
+}
+
 function renderRadial(){
   const root = buildKoTree();
   const leaves = koLeaves(root, []);
@@ -1167,9 +1208,21 @@ function renderRadial(){
   const all = collectNodes(root, []);
   all.forEach(nodeXY);
   window.__radDebug = { root, leaves, all };   // temporary, for verification
+  let conns="";
+  for(const node of all){
+    if(node.kind!=="match") continue;
+    for(const ch of [node.home, node.away]){
+      const d = node.radius===0 ? radStraight(node,ch) : radConnector(node,ch);
+      conns += `<path class="rad-conn${teamOf(ch)?" live":""}" d="${d}"/>`;
+    }
+  }
   el("#view-radial").innerHTML =
-    `<div class="radial-wrap" style="text-align:center;color:#7c7458;padding:40px">`+
-    `Layout ready: ${leaves.length} leaves, ${all.length} nodes.</div>`;
+    `<div class="radial-wrap"><svg viewBox="0 0 1200 1200" role="img" aria-label="Radial knockout bracket">`+
+    radDefs()+
+    `<circle cx="${RAD_CX}" cy="${RAD_CY}" r="250" fill="url(#radGlow)"/>`+
+    conns+
+    radCenter()+
+    `</svg></div>`;
 }
 
 /* ============================================================
