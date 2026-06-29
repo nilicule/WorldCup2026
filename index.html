@@ -1573,7 +1573,7 @@ el("#refreshBtn").addEventListener("click", () => {
   const b = el("#refreshBtn");
   b.disabled = true; b.classList.add("busy");
   Promise.all([
-    Promise.resolve(refreshResults()),
+    Promise.resolve(refreshResults(true)),
     new Promise(r => setTimeout(r, 400))
   ]).finally(() => { b.disabled = false; b.classList.remove("busy"); });
 });
@@ -1613,11 +1613,13 @@ function mergeRemote(remote){
   if(changed){ saveResults(); renderAll(); }
 }
 let refreshing = false;
-function refreshResults(){
+function refreshResults(force){
   if(refreshing) return Promise.resolve();
-  // Don't yank focus out of an in-progress score entry: skip while a score input is focused.
-  const ae = document.activeElement;
-  if(ae && ae.closest && ae.closest("[data-score]")) return Promise.resolve();
+  if(!force){
+    // Don't yank focus out of an in-progress score entry: skip while a score input is focused.
+    const ae = document.activeElement;
+    if(ae && ae.closest && ae.closest("[data-score]")) return Promise.resolve();
+  }
   refreshing = true;
   return fetch(REMOTE_URL, {cache:"no-store"})
     .then(r => r.ok ? r.json() : null)
