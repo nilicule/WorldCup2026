@@ -863,6 +863,17 @@ function timeCell(utc){
   return `<div class="m-time"><div class="t">${fmtTime.format(dOf(utc))}</div><div>${fmtShort.format(dOf(utc))}</div></div>`;
 }
 
+/* ---- Today's-match form indicator ---- */
+
+// Home team's share [0,1] of a diverging metric bar. a=home value, b=away value.
+// 0.5 = even. Reduces to a/(a+b) for non-negative values; handles negative GD.
+function barFrac(a, b){
+  const t = Math.abs(a) + Math.abs(b);
+  if (t === 0) return 0.5;
+  const s = 0.5 + (a - b) / (2 * t);
+  return Math.max(0, Math.min(1, s));
+}
+
 // ---- Fixtures ----
 function renderFixtures(){
   const all = [
