@@ -187,48 +187,58 @@
   .pastgroup>summary .count{margin-left:auto;font-weight:500;font-size:13px;font-family:"Segoe UI",system-ui,sans-serif}
   .pastgroup[open]>summary{margin-bottom:14px}
 
+  /* Match card — stacked scorecard: header (kickoff + tag), one row per
+     team with its score, then venue / form. */
   .match{
-    display:grid;
-    grid-template-columns: 88px 1fr auto;
-    align-items:center;gap:12px;
+    display:flex;flex-direction:column;
     background:var(--panel);border:1px solid var(--line);
-    border-radius:var(--radius);padding:12px 14px;margin:8px 0;
+    border-radius:var(--radius);padding:14px;margin:10px 0;
   }
   .match.is-today{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot) inset, var(--shadow)}
-  .m-time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;line-height:1.25}
-  .m-time .t{color:var(--ink);font-weight:700;font-size:15px}
-  .m-meta{min-width:0}
-  .m-teams{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .side{display:inline-flex;align-items:center;gap:7px;font-weight:600;white-space:nowrap}
-  .side .flag{font-size:18px;width:22px;text-align:center}
-  .side.tbd{color:var(--muted);font-weight:500;font-style:italic}
-  .vs{color:var(--muted);font-size:12px;padding:0 2px}
-  .m-venue{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+
+  .m-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding-bottom:11px;margin-bottom:12px;border-bottom:1px solid var(--line);
+  }
+  .m-kick{display:flex;align-items:baseline;gap:8px;min-width:0;font-variant-numeric:tabular-nums}
+  .m-kick .m-t{
+    font-family:"Rajdhani",system-ui,sans-serif;font-weight:700;font-size:17px;
+    letter-spacing:.5px;color:var(--ink);
+  }
+  .m-kick .m-d{font-size:12.5px;color:var(--muted)}
   .tag{
-    display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;
-    padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)
+    flex:none;display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;
+    padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;
   }
   .tag.grp{color:var(--accent)}
   .tag.ko{color:var(--accent-2)}
-  .score-entry{display:flex;align-items:center;gap:6px}
-  .score-entry input{
-    width:42px;height:38px;text-align:center;font-size:17px;font-weight:700;
-    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
-    border-radius:9px;font-variant-numeric:tabular-nums;
+
+  .m-rows{display:flex;flex-direction:column;gap:9px}
+  .m-row{display:flex;align-items:center;gap:12px}
+  .m-row .side{flex:1;min-width:0;display:flex;align-items:center;gap:11px;font-weight:600;font-size:15.5px}
+  .m-row .side .flag{flex:none;font-size:22px;width:27px;text-align:center}
+  .m-row .side .nm{min-width:0;overflow-wrap:anywhere;line-height:1.25}
+  .m-row .side.tbd{color:var(--muted);font-weight:500;font-style:italic}
+  .m-row .side.won .nm{color:var(--accent)}
+  .m-score{
+    flex:none;width:48px;height:44px;text-align:center;
+    font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;
+    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;
   }
-  .score-entry input:focus{outline:none;border-color:var(--accent)}
-  .score-entry input:disabled{opacity:.4}
-  .score-dash{color:var(--muted)}
-  .pen{display:flex;gap:4px;align-items:center;margin-top:6px;justify-content:flex-end}
+  .m-score:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,160,.25)}
+  .m-score:disabled{opacity:.35}
+
+  .m-venue{
+    margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px;
+  }
+  .pen{display:flex;gap:6px;align-items:center;margin-top:10px}
   .pen .lbl{font-size:11px;color:var(--muted)}
   .pen button{
-    font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px;cursor:pointer;
+    font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;
     background:var(--panel-2);border:1px solid var(--line);color:var(--muted)
   }
   .pen button.sel{background:var(--accent-2);color:#2a2200;border-color:var(--accent-2)}
-  .result-pill{
-    font-size:11px;color:var(--muted);text-align:right;margin-top:4px
-  }
 
   /* ---- Today's-match form indicator ---- */
   .match-form{grid-column:1 / -1;margin-top:4px}
@@ -399,10 +409,9 @@
   #toTop svg{width:20px;height:20px}
   @media(max-width:560px){
     #toTop{right:14px;bottom:14px}
-    .match{grid-template-columns:64px 1fr;grid-template-areas:"time meta" "score score";row-gap:8px}
-    .m-time{grid-area:time}.m-meta{grid-area:meta}
-    .score-entry{grid-area:score;justify-content:flex-start}
-    .result-pill,.pen{justify-content:flex-start;text-align:left}
+    .match{padding:12px}
+    .m-kick .m-t{font-size:16px}
+    .m-row .side{font-size:15px}
   }
 </style>
 </head>
@@ -913,10 +922,6 @@ const el = sel => document.querySelector(sel);
 function flag(t){ return FLAG[t] || "🏳️"; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
-function timeCell(utc){
-  return `<div class="m-time"><div class="t">${fmtTime.format(dOf(utc))}</div><div>${fmtShort.format(dOf(utc))}</div></div>`;
-}
-
 /* ---- Today's-match form indicator ---- */
 
 // Home team's share [0,1] of a diverging metric bar. a=home value, b=away value.
@@ -1054,70 +1059,65 @@ function renderFixtures(){
     `<div class="empty">No matches.</div>`;
 }
 
-function sideHtml(team,label,won){
-  if(team) return `<span class="side${won?' won':''}"><span class="flag">${flag(team)}</span>${esc(team)}</span>`;
-  return `<span class="side tbd">${esc(label)}</span>`;
+// One score box for a single side of a match.
+function scoreInput(id, side, enabled){
+  const r=getRes(id)||{};
+  const v=r[side]===undefined?"":r[side];
+  return `<input class="m-score" type="number" min="0" max="99" inputmode="numeric" data-score="${id}" data-side="${side}" value="${v}" ${enabled?"":"disabled"} aria-label="${side==='h'?'home':'away'} score">`;
+}
+
+// One team row: flag + name on the left, its score box on the right.
+// info = {team, label, won}; a null team renders the TBD label.
+function teamRow(side, info, id, enabled){
+  const inner = info.team
+    ? `<span class="flag">${flag(info.team)}</span><span class="nm">${esc(info.team)}</span>`
+    : `<span class="nm">${esc(info.label)}</span>`;
+  const cls = (info.team ? "" : " tbd") + (info.won ? " won" : "");
+  return `<div class="m-row"><span class="side${cls}">${inner}</span>${scoreInput(id, side, enabled)}</div>`;
+}
+
+// Stacked match card shared by group and knockout fixtures.
+function matchCard(m, tagCls, tagLabel, home, away, enabled, isGroup, formPanel){
+  const r=getRes(m.id)||{};
+  const venueName=VENUE[m.city]||"";
+  const venue=venueName ? `${esc(venueName)}, ${esc(m.city)}` : esc(m.city);
+  let pen="";
+  if(!isGroup && enabled && hasScore(r) && r.h===r.a){
+    pen=`<div class="pen"><span class="lbl">Pens:</span>
+      <button data-pen="${m.id}" data-side="h" class="${r.pen==='h'?'sel':''}">Home</button>
+      <button data-pen="${m.id}" data-side="a" class="${r.pen==='a'?'sel':''}">Away</button></div>`;
+  }
+  return `<div class="match${isToday(m.utc)?" is-today":""}" data-id="${m.id}">
+    <div class="m-head">
+      <div class="m-kick"><span class="m-t">${fmtTime.format(dOf(m.utc))}</span><span class="m-d">${esc(fmtShort.format(dOf(m.utc)))}</span></div>
+      <span class="tag ${tagCls}">${esc(tagLabel)}</span>
+    </div>
+    <div class="m-rows">
+      ${teamRow("h", home, m.id, enabled)}
+      ${teamRow("a", away, m.id, enabled)}
+    </div>
+    <div class="m-venue">${venue}</div>
+    ${pen}
+    ${formPanel}
+  </div>`;
 }
 
 function fixtureGroupRow(m){
-  const r=getRes(m.id);
-  const tdy=isToday(m.utc)?" is-today":"";
   const formPanel = isToday(m.utc) ? matchupPanelHtml(m.home, m.away, m.utc) : "";
-  return `<div class="match${tdy}" data-id="${m.id}">
-    ${timeCell(m.utc)}
-    <div class="m-meta">
-      <div class="m-teams">
-        ${sideHtml(m.home,m.home,false)}
-        <span class="vs">v</span>
-        ${sideHtml(m.away,m.away,false)}
-      </div>
-      <div class="m-venue"><span class="tag grp">Group ${m.grp}</span>
-        <span>${esc(VENUE[m.city]||"")}, ${esc(m.city)}</span></div>
-    </div>
-    ${scoreEntry(m.id, true, true)}
-    ${formPanel}
-  </div>`;
+  return matchCard(m, "grp", "Group "+m.grp,
+    {team:m.home, label:m.home, won:false},
+    {team:m.away, label:m.away, won:false},
+    true, true, formPanel);
 }
 
 function fixtureKoRow(m){
   const o=koOutcome(m.n);
-  const tdy=isToday(m.utc)?" is-today":"";
   const both = o.home && o.away;
   const formPanel = (isToday(m.utc) && both) ? matchupPanelHtml(o.home, o.away, m.utc) : "";
-  return `<div class="match${tdy}" data-id="${m.id}">
-    ${timeCell(m.utc)}
-    <div class="m-meta">
-      <div class="m-teams">
-        ${sideHtml(o.home,resolveSpec(m.homeSpec).label,o.winner&&o.winner===o.home)}
-        <span class="vs">v</span>
-        ${sideHtml(o.away,resolveSpec(m.awaySpec).label,o.winner&&o.winner===o.away)}
-      </div>
-      <div class="m-venue"><span class="tag ko">${ROUND_NAME[m.round]} · M${m.n}</span>
-        <span>${esc(VENUE[m.city]||"")}, ${esc(m.city)}</span></div>
-    </div>
-    ${scoreEntry(m.id, both, false)}
-    ${formPanel}
-  </div>`;
-}
-
-function scoreEntry(id, enabled, isGroup){
-  const r=getRes(id)||{};
-  const dis = enabled?"":"disabled";
-  const h = r.h===undefined?"":r.h;
-  const a = r.a===undefined?"":r.a;
-  let extra="";
-  if(!isGroup && enabled && hasScore(r) && r.h===r.a){
-    extra=`<div class="pen"><span class="lbl">Pens:</span>
-      <button data-pen="${id}" data-side="h" class="${r.pen==='h'?'sel':''}">Home</button>
-      <button data-pen="${id}" data-side="a" class="${r.pen==='a'?'sel':''}">Away</button></div>`;
-  }
-  return `<div>
-    <div class="score-entry">
-      <input type="number" min="0" max="99" inputmode="numeric" data-score="${id}" data-side="h" value="${h}" ${dis} aria-label="home score">
-      <span class="score-dash">–</span>
-      <input type="number" min="0" max="99" inputmode="numeric" data-score="${id}" data-side="a" value="${a}" ${dis} aria-label="away score">
-    </div>${extra}
-  </div>`;
+  return matchCard(m, "ko", ROUND_NAME[m.round]+" · M"+m.n,
+    {team:o.home, label:resolveSpec(m.homeSpec).label, won:o.winner&&o.winner===o.home},
+    {team:o.away, label:resolveSpec(m.awaySpec).label, won:o.winner&&o.winner===o.away},
+    both, false, formPanel);
 }
 
 // ---- Groups ----
