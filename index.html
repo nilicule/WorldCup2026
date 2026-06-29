@@ -134,6 +134,7 @@
   .btn.danger:hover{border-color:var(--hot);color:var(--hot)}
   .btn.busy{opacity:.6;pointer-events:none}
   .btn.busy::after{content:"…"}
+  .btn .lbl-short{display:none}
   .tzwrap{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted);font-size:13px;font-weight:600}
   .tzwrap select{
     appearance:none;cursor:pointer;background:var(--panel);color:var(--ink);
@@ -165,7 +166,17 @@
   }
   .tzlist li.empty{color:var(--muted);font-weight:500;cursor:default}
   .tzlist li:hover,.tzlist li.active{background:var(--panel-2)}
-  @media(max-width:560px){ .tzwrap{margin-left:0;flex-basis:100%} .tzcombo{flex:1} .tzcombo input{width:100%} }
+  @media(max-width:560px){
+    .tzwrap{margin-left:0;flex-basis:100%} .tzcombo{flex:1} .tzcombo input{width:100%}
+    /* Shrink the menu rows so everything fits one line instead of scrolling off */
+    nav.tabs{gap:6px;padding:0 14px}
+    .tab{flex:1 1 0;min-width:0;text-align:center;font-size:14px;letter-spacing:.3px;padding:9px 6px}
+    .toolbar{padding:0 14px}
+    .toolbar-actions{gap:6px}
+    .btn{flex:1 1 0;min-width:0;text-align:center;font-size:12px;padding:8px 6px;white-space:nowrap}
+    .btn .lbl-full{display:none}
+    .btn .lbl-short{display:inline}
+  }
   main{max-width:1180px;margin:18px auto 80px;padding:0 20px}
   .view{display:none}
   .view.active{display:block}
@@ -466,11 +477,11 @@
 
 <div class="toolbar">
   <div class="toolbar-actions">
-    <button class="btn" id="jumpToday">Jump to today</button>
+    <button class="btn" id="jumpToday"><span class="lbl-full">Jump to today</span><span class="lbl-short">Today</span></button>
     <button class="btn ghost" id="refreshBtn">Refresh</button>
-    <button class="btn ghost" id="exportBtn">Export results</button>
+    <button class="btn ghost" id="exportBtn"><span class="lbl-full">Export results</span><span class="lbl-short">Export</span></button>
     <button class="btn ghost" id="importBtn">Import</button>
-    <button class="btn danger ghost" id="resetBtn">Reset all</button>
+    <button class="btn danger ghost" id="resetBtn"><span class="lbl-full">Reset all</span><span class="lbl-short">Reset</span></button>
   </div>
   <label class="tzwrap" title="Times shown in this time zone (saved on this device)">
     <span>🌐 Time zone</span>
