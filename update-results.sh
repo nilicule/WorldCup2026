@@ -118,7 +118,7 @@ def roundCode:
   { "round of 32":"R32", "round of 16":"R16",
     "quarter-final":"QF", "quarter-finals":"QF",
     "semi-final":"SF",  "semi-finals":"SF",
-    "play-off for third place":"3RD", "final":"FINAL" };
+    "play-off for third place":"3RD", "bronze final":"3RD", "final":"FINAL" };
 def normTeam: ascii_downcase | . as $t | (teamAlias[$t] // $t);
 def normCity: ascii_downcase | . as $c | (cityAlias[$c] // $c);
 def dayEpoch(s): ((s[0:10]) + "T00:00:00Z") | fromdateiso8601;
