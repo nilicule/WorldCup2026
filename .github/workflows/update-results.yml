@@ -1,12 +1,11 @@
 name: Update results
 
-# Pull finished World Cup 2026 matches from the FIFA API every hour and commit
-# any newly-filled scores back to worldcup2026-results.json.
+# Pull finished World Cup 2026 matches from the FIFA API and commit any
+# newly-filled scores back to worldcup2026-results.json.
+#
+# The tournament is over, so the hourly schedule has been removed. Run this
+# manually from the Actions tab if a result still needs backfilling.
 on:
-  schedule:
-    # Every hour, on the hour (UTC). GitHub may delay scheduled runs under load.
-    - cron: "0 * * * *"
-  # Allow manual runs from the Actions tab.
   workflow_dispatch:
 
 # Needed so the workflow can push the updated JSON back to the repo.
